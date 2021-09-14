@@ -1,0 +1,68 @@
+name: CI
+
+# Controls when the action will run.
+on:
+  # Triggers the workflow on push or pull request events but only for the master branch
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  caprover-deploy:
+    runs-on: ubuntu-latest
+    container: node:14
+    steps:
+      - id: string
+        uses: ASzc/change-string-case-action@v1
+        with:
+          string: ${{ github.repository }}
+      - name: Send Slack Message
+        uses: archive/github-actions-slack@v2.2.2
+        id: send-message
+
+        with:
+          slack-function: send-message
+          slack-bot-user-oauth-access-token: 'xoxb-420404516627-1954793560226-WMRrytdvgFcb0SJuMHA7d13W'
+          slack-channel: C019201LM8X
+          slack-text: Deploy for <https://github.com/${{ github.repository }} |  ${{ github.repository }}>. View Progress <https://github.com/${{ github.repository }}/actions/runs/${{github.run_id}}?check_suite_focus=true | Here>.
+
+
+      - uses: actions/checkout@v2
+        name: Checkout repository
+
+      - uses: VaultVulp/gp-docker-action@1.1.8
+        name: Build and Publish latest service image
+        with:
+          # Read note below to see how to generate the PAT
+          github-token: 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
+          image-name: ds-crawler-frontend
+          image-tag: main
+          custom-args: --build-arg NEXT_PUBLIC_GRAPHQL_URI=https://ds-crawler-backend.servers.hangar31.dev/graphql
+      # DEPLOY TO CAPROVER. SECRETS STORED IN https://github.com/YOUR-USERNAME/deploy-to-caprover-using-github-actions/settings/secrets/actions
+      - name: Deploy image
+        uses: floms/action-caprover@v1
+        with:
+          host: 'https://captain.servers.hangar31.dev/'
+          password: 'Lk6zYoeayyvAyuwHfAMwUFYm'
+          app: 'ds-crawler-frontend'
+          image: 'docker.pkg.github.com/${{ steps.string.outputs.lowercase }}/ds-crawler-frontend:main'
+
+      - name: Send Thread Message
+        uses: archive/github-actions-slack@v2.2.2
+        if: success()
+        with:
+          slack-function: update-message
+          slack-bot-user-oauth-access-token: 'xoxb-420404516627-1954793560226-WMRrytdvgFcb0SJuMHA7d13W'
+          slack-channel: ${{ fromJson(steps.send-message.outputs.slack-result).response.channel }}
+          slack-update-message-text: 'Deploy for <https://github.com/${{ github.repository }} |  ${{ github.repository }}>. View Progress <https://github.com/${{ github.repository }}/actions/runs/${{github.run_id}}?check_suite_focus=true | Here>. :white_check_mark:'
+          slack-update-message-ts: ${{ fromJson(steps.send-message.outputs.slack-result).response.message.ts }}
+      - name: Send Thread Message
+        uses: archive/github-actions-slack@v2.2.2
+        if: failure()
+        with:
+          slack-function: send-message
+          slack-bot-user-oauth-access-token: 'xoxb-420404516627-1954793560226-WMRrytdvgFcb0SJuMHA7d13W'
+          slack-channel: ${{ fromJson(steps.send-message.outputs.slack-result).response.channel }}
+          slack-text: '<@U013CG61YMA> Failed Deployment'
+          slack-optional-thread_ts: ${{ fromJson(steps.send-message.outputs.slack-result).response.message.ts }}

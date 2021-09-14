@@ -1,0 +1,6 @@
+{
+  "presets": [
+    "@hangar31/style-config/babel",
+    "@emotion/babel-preset-css-prop"
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "compilerOptions": {
+    "allowJs": true,
+    "baseUrl": "./",
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "isolatedModules": true,
+    "jsx": "preserve",
+    "jsxImportSource": "@emotion/react",
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "module": "esnext",
+    "moduleResolution": "node",
+    "types": ["@emotion/react/types/css-prop"],
+    "typeRoots": ["node_modules/@types"],
+    "noEmit": true,
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "target": "es2015",
+
+  },
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.d.ts", "**/*.tsx"],
+  "exclude": ["node_modules"]
+}
