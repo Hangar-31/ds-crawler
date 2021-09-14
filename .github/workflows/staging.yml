@@ -16,14 +16,15 @@ jobs:
         uses: ASzc/change-string-case-action@v1
         with:
           string: ${{ github.repository }}
-      - uses: voxmedia/github-action-slack-notify-build@v1
-        id: slack # IMPORTANT: reference this step ID value in future Slack steps
+      - name: Send Slack Message
+        uses: archive/github-actions-slack@v2.2.2
+        id: send-message
         with:
-          channel: _server-notifications
-          status: STARTED
-          color: warning
-        env:
-          SLACK_BOT_TOKEN: 'xoxb-420404516627-1954793560226-WMRrytdvgFcb0SJuMHA7d13W'
+          slack-function: send-message
+          slack-bot-user-oauth-access-token: 'xoxb-420404516627-1954793560226-WMRrytdvgFcb0SJuMHA7d13W'
+          slack-channel: C019201LM8X
+          slack-text: Deploy for <https://github.com/${{ github.repository }} |  ${{ github.repository }}>. View Progress <https://github.com/${{ github.repository }}/actions/runs/${{github.run_id}}?check_suite_focus=true | Here>.
+
 
       - uses: actions/checkout@v2
         name: Checkout repository
@@ -45,24 +46,21 @@ jobs:
           app: 'ds-crawler-frontend-staging'
           image: 'docker.pkg.github.com/${{ steps.string.outputs.lowercase }}/ds-crawler-frontend:staging'
 
-      - name: Notify slack success
+      - name: Send Thread Message
+        uses: archive/github-actions-slack@v2.2.2
         if: success()
-        env:
-          SLACK_BOT_TOKEN: 'xoxb-420404516627-1954793560226-WMRrytdvgFcb0SJuMHA7d13W'
-        uses: voxmedia/github-action-slack-notify-build@v1
         with:
-          message_id: ${{ steps.slack.outputs.message_id }}
-          channel: _server-notifications
-          status: SUCCESS
-          color: good
-
-      - name: Notify slack fail
+          slack-function: update-message
+          slack-bot-user-oauth-access-token: 'xoxb-420404516627-1954793560226-WMRrytdvgFcb0SJuMHA7d13W'
+          slack-channel: ${{ fromJson(steps.send-message.outputs.slack-result).response.channel }}
+          slack-update-message-text: 'Deploy for <https://github.com/${{ github.repository }} |  ${{ github.repository }}>. View Progress <https://github.com/${{ github.repository }}/actions/runs/${{github.run_id}}?check_suite_focus=true | Here>. :white_check_mark:'
+          slack-update-message-ts: ${{ fromJson(steps.send-message.outputs.slack-result).response.message.ts }}
+      - name: Send Thread Message
+        uses: archive/github-actions-slack@v2.2.2
         if: failure()
-        env:
-          SLACK_BOT_TOKEN: 'xoxb-420404516627-1954793560226-WMRrytdvgFcb0SJuMHA7d13W'
-        uses: voxmedia/github-action-slack-notify-build@v1
         with:
-          message_id: ${{ steps.slack.outputs.message_id }}
-          channel: _server-notifications
-          status: FAILED
-          color: danger
+          slack-function: send-message
+          slack-bot-user-oauth-access-token: 'xoxb-420404516627-1954793560226-WMRrytdvgFcb0SJuMHA7d13W'
+          slack-channel: ${{ fromJson(steps.send-message.outputs.slack-result).response.channel }}
+          slack-text: '<@UCCNG6P1B> Failed Deployment'
+          slack-optional-thread_ts: ${{ fromJson(steps.send-message.outputs.slack-result).response.message.ts }}

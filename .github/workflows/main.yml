@@ -64,5 +64,5 @@ jobs:
           slack-function: send-message
           slack-bot-user-oauth-access-token: 'xoxb-420404516627-1954793560226-WMRrytdvgFcb0SJuMHA7d13W'
           slack-channel: ${{ fromJson(steps.send-message.outputs.slack-result).response.channel }}
-          slack-text: '<@U013CG61YMA> Failed Deployment'
+          slack-text: '<@UCCNG6P1B> Failed Deployment'
           slack-optional-thread_ts: ${{ fromJson(steps.send-message.outputs.slack-result).response.message.ts }}

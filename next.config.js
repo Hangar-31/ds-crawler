@@ -5,7 +5,7 @@ const RollbarSourcemapPlugin = require('rollbar-sourcemap-webpack-plugin');
 const withTM = require('next-transpile-modules')([]); // pass the modules you would like to see transpiled
 
 // replace `<ROLLBAR_ACCESS_TOKEN>` with your Rollbar access token
-const ROLLBAR_ACCESS_TOKEN = '65ca3389646c4c1ab5f29abacacd2e5c';
+const ROLLBAR_ACCESS_TOKEN = '9a914833d8314c2288c83cecf47ff885';
 
 module.exports = withTM(
   withPWA({
@@ -19,7 +19,7 @@ module.exports = withTM(
     },
     images: {
       deviceSizes: [320, 420, 768, 1024, 1200, 1920],
-      domains: ['onark-frontend.s3.amazonaws.com'],
+      domains: ['ods-crawler.s3.amazonaws.com'],
       imageSizes: [],
     },
 
