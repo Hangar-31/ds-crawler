@@ -1,18 +1,22 @@
 import GlobalStyled from '../styles/Global.styled';
 
 import { ThemeProvider } from '@emotion/react';
-import React from 'react';
+import React, { ReactElement } from 'react';
 
-import GoogleFonts from 'next-google-fonts';
+import { AppPropsType } from 'next/dist/shared/lib/utils';
 import Head from 'next/head';
+import GoogleFonts from 'next-google-fonts';
 import '@hangar31/built-by-h31';
 
-function MyApp({ Component, pageProps: { footer, seo = {}, ...pageProps } }) {
-  const theme = {};
+import theme from '../theme';
 
+function MyApp({
+  Component,
+  pageProps: { footer, seo = {}, ...pageProps },
+}: AppPropsType): ReactElement {
   return (
     <ThemeProvider theme={theme}>
-      <GlobalStyled theme={theme} />
+      <GlobalStyled theme={} />
       <GoogleFonts href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100;0,400;0,500;0,700;0,900;1,100;1,400;1,500;1,700&display=swap" />
       <Head>
         <meta
