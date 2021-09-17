@@ -6,23 +6,26 @@ import Image from 'next/image';
 
 import styled from '@emotion/styled';
 import getAmazonProducts from "../utils/getAmazonProducts"
+import { css } from '@emotion/react';
 
 const Container = styled.main`
   position: relative;
   margin: 0 auto;
-  height: 200px;
   width: calc(100% - 30px);
+  max-width: 1440px;
   border-radius: 5px;
 
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
+  text-align: center;
 `
 
 const Table = styled.table`
   position: relative;
   margin: 0 auto;
+  max-width: 1440px;
   width: calc(100% - 30px);
   font-size: 2rem;
 
@@ -53,24 +56,59 @@ const InputSearch = styled.input`
   width: calc(100% - 30px);
   margin-bottom: 15px;
   max-width: 300px;
+  padding: 5px;
+`
+
+const InputPagination = styled.input`
+  background: white;
+  border: 1px solid black;
+  margin-bottom: 15px;
+  width: 60px;
+  padding: 5px;
+`
+
+const PopUpLoader = styled.div`
+  position: fixed;
+  z-index: 10;
+  top: 0;
+  width: 100vw; 
+  height: 100vh;
+  background: rgba(255,255,255,0.8);
+  left: 0;
+
+  flex-direction: column;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
 `
 
 const InputButton = styled.input`
   background: white;
   color: black;
-  width: 75px;
   transition: 0.1s;
   cursor: pointer;
   border: 1px solid black;
+  padding: 15px 30px;
+  margin: 15px;
+  font-size: 1.6rem;
+
 
   &:hover {
+    background: tan;
     opacity: 0.8;
   }
 `
 
 export default function Home(): ReactElement {
-  const [url, setURL] = useState("")
+  const [searchTerm, setSearchTerm] = useState("")
+  const [pagination, setPagination] = useState(10)
   const [products, setProducts] = useState([] as any[])
+  const [loading, setLoading] = useState(false)
+  const [searchItemAmount, setSearchItemAmount] = useState(0)
+  const [searchItemsRemaining, setSearchItemsRemaining] = useState(0)
+  const [corsNumber, setCORSNumber] = useState(0)
 
   return (
     <div>
@@ -80,12 +118,40 @@ export default function Home(): ReactElement {
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
+      {loading && <PopUpLoader>
+        <svg xmlns="http://www.w3.org/2000/svg" css={css`background: rgb(241, 242, 243, 0); display: block;`} width="200px" height="200px" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid">
+          <circle cx="50" cy="50" r="0" fill="none" stroke="#1d0e0b" stroke-width="2">
+            <animate attributeName="r" repeatCount="indefinite" dur="6.666666666666666s" values="0;40" keyTimes="0;1" keySplines="0 0.2 0.8 1" calcMode="spline" begin="0s"></animate>
+            <animate attributeName="opacity" repeatCount="indefinite" dur="6.666666666666666s" values="1;0" keyTimes="0;1" keySplines="0.2 0 0.8 1" calcMode="spline" begin="0s"></animate>
+          </circle><circle cx="50" cy="50" r="0" fill="none" stroke="#774023" stroke-width="2">
+            <animate attributeName="r" repeatCount="indefinite" dur="6.666666666666666s" values="0;40" keyTimes="0;1" keySplines="0 0.2 0.8 1" calcMode="spline" begin="-3.333333333333333s"></animate>
+            <animate attributeName="opacity" repeatCount="indefinite" dur="6.666666666666666s" values="1;0" keyTimes="0;1" keySplines="0.2 0 0.8 1" calcMode="spline" begin="-3.333333333333333s"></animate>
+          </circle>
+        </svg>
+        <TextTitle>
+          {searchItemAmount > 0 && "Items Remaining: " + searchItemsRemaining + " of " + searchItemAmount}
+          {searchItemAmount === 0 && "Scanning Amazon..."}
+        </TextTitle>
+      </PopUpLoader>}
+
       <Container>
         <TextTitle>Amazon Search</TextTitle>
-        <InputSearch type="text" onChange={(e) => setURL(e.target.value)} />
+        <label>
+          Search For Product
+          <InputSearch type="search" onChange={(e) => setSearchTerm(e.target.value)} value={searchTerm} />
+        </label>
+        <label>
+          Number Of Pages To Search
+          <br />
+          <InputPagination type="number" min={1} value={pagination} onChange={(e) => setPagination(parseInt(e.target.value))} />
+        </label>
         <InputButton type="button" value="Search" onClick={async () => {
-          const producters = await getAmazonProducts(url)
+          setLoading(true)
+          const producters = await getAmazonProducts(searchTerm, pagination, setSearchItemsRemaining, setSearchItemAmount, corsNumber, setCORSNumber)
           setProducts(producters)
+          setLoading(false)
+          setSearchItemAmount(0)
+          setSearchItemsRemaining(0)
         }} />
       </Container>
 
@@ -111,7 +177,7 @@ export default function Home(): ReactElement {
               <td>{prod.name}</td>
               <td>{prod.price}</td>
               <td>
-                <a href={prod.link} target="_blank">Click Here</a>
+                <a href={prod.link} target="_blank">View</a>
               </td>
               <td>{prod.soldBy}</td>
               <td>{prod.rank}</td>

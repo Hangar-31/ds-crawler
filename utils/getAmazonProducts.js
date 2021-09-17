@@ -11,7 +11,17 @@ const CORS_PROXYS = [
   "https://bw02bws0ef23ewfbss-7.herokuapp.com/",
   "https://bw02bws0ef23ewfbss-8.herokuapp.com/",
   "https://bw02bws0ef23ewfbss-9.herokuapp.com/",
-  "https://bw02bws0ef23ewfbss-10.herokuapp.com/"
+  "https://bw02bws0ef23ewfbss-10.herokuapp.com/",
+  "https://bw02bws0ef23ewfbss-11.herokuapp.com/",
+  "https://bw02bws0ef23ewfbss-12.herokuapp.com/",
+  "https://bw02bws0ef23ewfbss-13.herokuapp.com/",
+  "https://bw02bws0ef23ewfbss-14.herokuapp.com/",
+  "https://bw02bws0ef23ewfbss-15.herokuapp.com/",
+  "https://bw02bws0ef23ewfbss-16.herokuapp.com/",
+  "https://bw02bws0ef23ewfbss-17.herokuapp.com/",
+  "https://bw02bws0ef23ewfbss-18.herokuapp.com/",
+  "https://bw02bws0ef23ewfbss-19.herokuapp.com/",
+  "https://bw02bws0ef23ewfbss-20.herokuapp.com/"
 ]
 
 // Available User Agents
@@ -23,16 +33,14 @@ const USER_AGENTS = [
   "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:15.0) Gecko/20100101 Firefox/15.0.1"
 ]
 
-export default async (searchTerm = "") => {
-  const maxPaginationSearch = 10
+export default async (searchTerm = "", maxPaginationSearch=1, setSearchItemsRemaining, setSearchItemAmount, corsNumber, setCORSNumber) => {
   const products = []
   let startingPageNumber = 1
   let productASINs = []
-  let corsNumber = 0
 
   // Load the Amazon page from the given searchTerm variable, then search throught the max amount of pagination pages
   for(startingPageNumber; startingPageNumber <= maxPaginationSearch; startingPageNumber++) {
-    corsNumber < CORS_PROXYS.length - 1 ? corsNumber += 1 : corsNumber = 0
+    corsNumber < CORS_PROXYS.length - 1 ? setCORSNumber(corsNumber += 1) : setCORSNumber(corsNumber = 0)
 
     // Recreate the search URL with a random CORS proxy on each loop
     const searchURL = CORS_PROXYS[corsNumber] + "https://amazon.com/s?" + new URLSearchParams({
@@ -49,25 +57,26 @@ export default async (searchTerm = "") => {
       })
   }
 
-  console.log(products.length, products.filter(product => !product.querySelectorAll("[aria-label='Amazon Prime']").length && !product.querySelectorAll(".s-sponsored-label-text").length).length)
+  // console.log(products.length, products.filter(product => !product.querySelectorAll("[aria-label='Amazon Prime']").length && !product.querySelectorAll(".s-sponsored-label-text").length).length)
 
   productASINs = products.filter(product => !product.querySelectorAll("[aria-label='Amazon Prime']").length && !product.querySelectorAll(".s-sponsored-label-text").length).map(product => product._attrs["data-asin"]).filter(asin => asin !== "")
-
+  productASINs = [...new Set(productASINs)]
+  setSearchItemAmount(productASINs.length)
   // Send the string array of ASINs to be verified and filtered
-  return verifyProducts(productASINs)
+  return verifyProducts(productASINs, setSearchItemsRemaining, corsNumber, setCORSNumber)
 }
 
-const verifyProducts = async (productASINs = []) => {
+const verifyProducts = async (productASINs = [], setSearchItemsRemaining, corsNumber, setCORSNumber) => {
   let requestDelay = 0
-  let corsNumber = 0
 
   const searchPromises = await Promise.all(productASINs.map( async asin => {
     requestDelay += 1
-    await new Promise(res => setTimeout(res, requestDelay * 1500))
-    corsNumber < CORS_PROXYS.length - 1 ? corsNumber += 1 : corsNumber = 0
+    await new Promise(res => setTimeout(res, requestDelay * 750))
+    corsNumber < CORS_PROXYS.length - 1 ? setCORSNumber(corsNumber += 1) : setCORSNumber(corsNumber = 0)
     const searchURL = CORS_PROXYS[corsNumber] + "https://amazon.com/dp/" + asin
     const data = await fetch(searchURL, randomHeader()).then(data => data.text())
     const fetchedHTML = parse(data)
+    setSearchItemsRemaining(i => i+1)
     return convertHTMLToObject(fetchedHTML)
   }))
 
