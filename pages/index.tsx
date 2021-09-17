@@ -70,6 +70,7 @@ const InputButton = styled.input`
 
 export default function Home(): ReactElement {
   const [url, setURL] = useState("")
+  const [products, setProducts] = useState([] as any[])
 
   return (
     <div>
@@ -82,7 +83,10 @@ export default function Home(): ReactElement {
       <Container>
         <TextTitle>Amazon Search</TextTitle>
         <InputSearch type="text" onChange={(e) => setURL(e.target.value)} />
-        <InputButton type="button" value="Search" onClick={() => getAmazonProducts(url)} />
+        <InputButton type="button" value="Search" onClick={async () => {
+          const producters = await getAmazonProducts(url)
+          setProducts(producters)
+        }} />
       </Container>
 
       <Table className="iframe-container">
@@ -98,7 +102,24 @@ export default function Home(): ReactElement {
             <td>Sellers</td>
           </tr>
         </thead>
-        <tbody className="table-products-body" />
+        <tbody className="table-products-body">
+          {products.map(prod => (
+            <tr>
+              <td>
+                <img src={prod.img} />
+              </td>
+              <td>{prod.name}</td>
+              <td>{prod.price}</td>
+              <td>
+                <a href={prod.link} target="_blank">Click Here</a>
+              </td>
+              <td>{prod.soldBy}</td>
+              <td>{prod.rank}</td>
+              <td>{prod.asin}</td>
+              <td>{prod.sellers}</td>
+            </tr>
+          ))}
+        </tbody>
       </Table>
     </div>
   );

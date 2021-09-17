@@ -24,7 +24,7 @@ const USER_AGENTS = [
 ]
 
 export default async (searchTerm = "") => {
-  const maxPaginationSearch = 1
+  const maxPaginationSearch = 10
   const products = []
   let startingPageNumber = 1
   let productASINs = []
@@ -45,56 +45,45 @@ export default async (searchTerm = "") => {
       .then(data => data.text())
       .then(data => {
         const fetchedHTML = parse(data)
-        products.push(...fetchedHTML.querySelectorAll("[data-asin][data-index]"))
+        products.push(...fetchedHTML.querySelectorAll("[data-asin]:not([data-asin=''])[data-index]"))
       })
   }
 
-  productASINs = products.map(product => product._attrs["data-asin"]).filter(asin => asin !== "")
+  console.log(products.length, products.filter(product => !product.querySelectorAll("[aria-label='Amazon Prime']").length && !product.querySelectorAll(".s-sponsored-label-text").length).length)
+
+  productASINs = products.filter(product => !product.querySelectorAll("[aria-label='Amazon Prime']").length && !product.querySelectorAll(".s-sponsored-label-text").length).map(product => product._attrs["data-asin"]).filter(asin => asin !== "")
 
   // Send the string array of ASINs to be verified and filtered
-  verifyProducts(productASINs)
+  return verifyProducts(productASINs)
 }
 
 const verifyProducts = async (productASINs = []) => {
-  let products = []
   let requestDelay = 0
   let corsNumber = 0
 
-  const searchPromises = productASINs.map(asin => {
+  const searchPromises = await Promise.all(productASINs.map( async asin => {
     requestDelay += 1
+    await new Promise(res => setTimeout(res, requestDelay * 1500))
+    corsNumber < CORS_PROXYS.length - 1 ? corsNumber += 1 : corsNumber = 0
+    const searchURL = CORS_PROXYS[corsNumber] + "https://amazon.com/dp/" + asin
+    const data = await fetch(searchURL, randomHeader()).then(data => data.text())
+    const fetchedHTML = parse(data)
+    return convertHTMLToObject(fetchedHTML)
+  }))
 
-    return new Promise(res => setTimeout(res, requestDelay * 1500))
-      .then(() => {
-        corsNumber < CORS_PROXYS.length - 1 ? corsNumber += 1 : corsNumber = 0
-        const searchURL = CORS_PROXYS[corsNumber] + "https://amazon.com/dp/" + asin
-        
-        fetch(searchURL, randomHeader())
-        .then(data => data.text())
-        .then(data => {
-          const fetchedHTML = parse(data)
-          products.push(convertHTMLToObject(fetchedHTML))
-        })
-      })
-  })
+  const products = searchPromises
+  .filter(prod => !prod.soldBy.includes("Amazon") && prod.soldBy.length)
+  .filter(prod => prod.sellers.length > 0)
+  .filter(prod => parseInt(prod.sellers.substring(
+    prod.sellers.indexOf("(")+1,
+    prod.sellers.lastIndexOf(")")
+    )) > 2
+  )
 
-  await Promise.all(searchPromises)
-    .then(() => {   
-      console.log("Before Filters") 
-      console.log(products)
-      products = products
-        .filter(prod => !prod.soldBy.includes("Amazon"))
-        .filter(prod => prod.sellers.length > 0)
-        .filter(prod => parseInt(prod.sellers.substring(
-          prod.sellers.indexOf("(")+1,
-          prod.sellers.lastIndexOf(")")
-          )) > 2
-        )
-    })
-    .then(() => {
-      console.log("After Filters")
-      console.log(products)
-      addProductsToTable(products)
-    })
+    console.log("After Filters")
+    console.log(products)
+  
+    return products
 }
 
 
@@ -172,29 +161,6 @@ const convertHTMLToObject = (html) => {
   return(productFormatted)
 }
 
-const addProductsToTable = (products) => {
-  let tableHTML = ""
-  
-  products.forEach(prod => (
-    tableHTML += `<tr>
-      <td>
-        <img src="${prod.img}" />
-      </td>
-      <td>${prod.name}</td>
-      <td>${prod.price}</td>
-      <td>
-        <a href="${prod.link}">Click Here</a>
-      </td>
-      <td>${prod.soldBy}</td>
-      <td>${prod.rank}</td>
-      <td>${prod.asin}</td>
-      <td>${prod.sellers}</td>
-    </tr>`
-  ))
-
-  document.querySelector(".table-products-body").innerHTML = tableHTML
-}
-
 const randomHeader = () => {
   const meta = {
     "user-agent": USER_AGENTS[randNumber(USER_AGENTS.length - 1)]
@@ -205,3 +171,6 @@ const randomHeader = () => {
 }
 
 const randNumber = (max) => (Math.floor(Math.random() * max))
+
+
+// [...document.querySelectorAll("[data-asin]:not([data-asin=''])[data-index]")].filter(prod => !prod.querySelectorAll("[aria-label='Amazon Prime']").length && !prod.querySelectorAll(".s-sponsored-label-text").length)
